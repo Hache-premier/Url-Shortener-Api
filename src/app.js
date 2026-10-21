@@ -1,6 +1,8 @@
 
+import "dotenv/config";
 import express from "express";
 import { pool } from "./db.js";
+import linksRouter from "./routes/links.routes.js";
 
 const app = express();
 
@@ -10,18 +12,20 @@ app.get("/health", async (req, res) => {
     try {
         await pool.query("SELECT 1");
 
-        res.status(200).json({
+        return res.status(200).json({
             status: "ok",
             database: "connected",
         });
     } catch (error) {
         console.error("Health check failed:", error.message);
 
-        res.status(503).json({
+        return res.status(503).json({
             status: "error",
             database: "unavailable",
         });
     }
 });
+
+app.use("/links", linksRouter);
 
 export default app;
