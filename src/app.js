@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import { pool } from "./db.js";
 import linksRouter from "./routes/links.routes.js";
+import { redirectLinkController } from "./controllers/links.controller.js";
 
 const app = express();
 
@@ -27,5 +28,7 @@ app.get("/health", async (req, res) => {
 });
 
 app.use("/links", linksRouter);
+
+app.get("/:code", redirectLinkController);
 
 export default app;

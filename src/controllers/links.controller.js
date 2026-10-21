@@ -1,6 +1,10 @@
 
 import { createLinkSchema } from "../schemas/link.schema.js";
-import { createShortLink } from "../services/links.service.js";
+import {
+    createShortLink,
+    recordShortLinkVisit,
+    getShortLinkMetadata,
+} from "../services/links.service.js";
 
 export async function createLinkController(req, res) {
     const parsed = createLinkSchema.safeParse(req.body);
@@ -33,6 +37,55 @@ export async function createLinkController(req, res) {
         }
 
         console.error("Failed to create link:", error.message);
+
+        return res.status(500).json({
+            error: "Internal server error",
+        });
+    }
+}
+
+export async function getLinkMetadataController(req, res) {
+    try {
+        const link = await getShortLinkMetadata(req.params.code);
+
+        if (!link) {
+            return res.status(404).json({
+                error: "Short link not found",
+            });
+        }
+
+        return res.status(200).json(link);
+    } catch (error) {
+        console.error("Failed to fetch link metadata:", error.message);
+
+        return res.status(500).json({
+            error: "Internal server error",
+        });
+    }
+}
+
+export async function redirectLinkController(req, res) {
+    try {
+        const result = await recordShortLinkVisit(req.params.code, {
+            referrer: req.get("referer"),
+            userAgent: req.get("user-agent"),
+        });
+
+        if (result.status === "not_found") {
+            return res.status(404).json({
+                error: "Short link not found",
+            });
+        }
+
+        if (result.status === "expired") {
+            return res.status(410).json({
+                error: "Short link has expired",
+            });
+        }
+
+        return res.redirect(302, result.link.target_url);
+    } catch (error) {
+        console.error("Failed to redirect link:", error.message);
 
         return res.status(500).json({
             error: "Internal server error",
