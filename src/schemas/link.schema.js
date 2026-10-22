@@ -12,7 +12,7 @@ export const createLinkSchema = z.object({
         .regex(/^[A-Za-z0-9_-]+$/)
         .optional(),
     expires_at: z.iso.datetime({
-        off: true,
+        offset: true,
     }).optional(),
 }).strict();
 
