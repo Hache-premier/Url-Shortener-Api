@@ -224,6 +224,11 @@ Stores:
 ## 📸 Screenshot
 
 ![URL Shortener API documentation](docs/images/swagger-ui.png)
+![URL Shortener API documentation](docs/images/swagger-ui-1.png)
+![URL Shortener API documentation](docs/images/swagger-ui-2.png)
+![URL Shortener API documentation](docs/images/swagger-ui-3.png)
+![URL Shortener API documentation](docs/images/swagger-ui-4.png)
+![URL Shortener API documentation](docs/images/swagger-ui-5.png)
 
 ---
 
