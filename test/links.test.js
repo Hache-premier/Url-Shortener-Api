@@ -391,3 +391,29 @@ test("SQL injection-like codes cannot expose other links or remove tables", asyn
 
     assert.equal(metadataResponse.status, 200);
 });
+
+test("GET /docs serves the Swagger UI page", async () => {
+    const response = await fetch(`${baseUrl}/docs/`);
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(
+        response.headers.get("content-type") ?? "",
+        /text\/html/,
+    );
+    assert.match(html, /swagger-ui/i);
+});
+
+test("GET /docs/openapi.yaml serves the OpenAPI specification", async () => {
+    const response = await fetch(`${baseUrl}/docs/openapi.yaml`);
+    const yaml = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(
+        response.headers.get("content-type") ?? "",
+        /text\/yaml/,
+    );
+    assert.match(yaml, /^openapi: 3\.0\.3$/m);
+    assert.match(yaml, /\/links\/\{code\}\/clicks\.csv/);
+    assert.match(yaml, /\/health:/);
+});
