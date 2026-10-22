@@ -34,24 +34,24 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ## 🛠 Tech Stack
 
-**Backend**
+**Backend*
 
 - Node.js
 - Express 5
 - JavaScript (ES Modules)
 
-**Database**
+**Database*
 
 - PostgreSQL
 - `pg` PostgreSQL client and connection pooling
 
-**Validation and Documentation**
+**Validation and Documentation*
 
 - Zod
 - OpenAPI 3
 - Swagger UI Express
 
-**Testing and Deployment**
+**Testing and Deployment*
 
 - Node.js built-in test runner (`node:test`)
 - Docker
@@ -59,7 +59,7 @@ The project also focuses on request validation, database transactions, keyset pa
 - GitHub Actions
 - Super-Linter
 
-**Development Tools**
+**Development Tools*
 
 - Git and GitHub
 - VS Code
@@ -96,7 +96,7 @@ The project also focuses on request validation, database transactions, keyset pa
 ## 🗺 API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | `GET` | `/health` | Check API and database health |
 | `POST` | `/links` | Create a short link |
 | `GET` | `/:code` | Redirect to the original URL |
@@ -108,7 +108,7 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ### Example: Create a Short Link
 
-**Request**
+**Request*
 
 ```http
 POST /links
@@ -125,7 +125,7 @@ Content-Type: application/json
 
 The `code` and `expires_at` fields are optional. When a custom code is not supplied, the API generates one automatically.
 
-**Example using curl**
+**Example using curl*
 
 ```bash
 curl -i -X POST http://localhost:3000/links \
@@ -133,7 +133,7 @@ curl -i -X POST http://localhost:3000/links \
   -d '{"target_url":"https://example.com/articles","code":"my-article"}'
 ```
 
-**Possible responses**
+**Possible responses*
 
 - `201 Created` — short link created successfully.
 - `400 Bad Request` — invalid request data.
@@ -332,7 +332,7 @@ Docker Compose runs the API and PostgreSQL in separate containers.
 
 Install Docker Engine and the Docker Compose plugin using the official installation instructions:
 
-https://docs.docker.com/engine/install/ubuntu/
+<https://docs.docker.com/engine/install/ubuntu/>
 
 Verify the installation:
 
