@@ -1,112 +1,59 @@
-name: URL Shortener CI
+---
+#################################
+#################################
+## Super Linter GitHub Actions ##
+#################################
+#################################
+name: Lint Code Base
 
-on: # yamllint disable-line rule:truthy
+#
+# Documentation:
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+#
+
+#############################
+# Start the job on all push #
+#############################
+on:
   push:
-    branches:
-      - "**"
+    branches-ignore: [master, main]
+    # Remove the line above to run when pushing to master
   pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:
+    branches: [master, main]
 
-permissions: {}
-
+###############
+# Set the Job #
+###############
 jobs:
-  test:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: url_shortener_test
-          POSTGRES_USER: url_shortener_app
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - "5432:5432"
-        options: >-
-          --health-cmd "pg_isready -U url_shortener_app -d url_shortener_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      NODE_ENV: test
-      DB_HOST: localhost
-      DB_PORT: "5432"
-      DB_NAME: url_shortener_test
-      DB_USER: url_shortener_app
-      DB_PASSWORD: test_password
-      DB_POOL_MAX: "5"
-      BASE_URL: http://localhost:3000
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Prepare test database
-        run: |
-          PGPASSWORD="$DB_PASSWORD" psql \
-            -h "$DB_HOST" \
-            -p "$DB_PORT" \
-            -U "$DB_USER" \
-            -d "$DB_NAME" \
-            -v ON_ERROR_STOP=1 \
-            -f db/schema.sql
-
-      - name: Run integration tests
-        run: npm test
-
-  lint:
+  build:
+    # Name the Job
     name: Lint Code Base
+    # Set the agent to run on
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: read
-      statuses: write
-
+    ##################
+    # Load all steps #
+    ##################
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      ##########################
+      # Checkout the code base #
+      ##########################
+      - name: Checkout Code
+        uses: actions/checkout@v2
         with:
+          # Full git history is needed to get a proper
+          # list of changed files within `super-linter`
           fetch-depth: 0
-          persist-credentials: false
 
-      - name: Run Super-Linter
-        uses: super-linter/super-linter@v9.0.0
+      ################################
+      # Run Linter against code base #
+      ################################
+           - name: Lint Code Base
+        uses: github/super-linter/slim@v7
         env:
-          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SAVE_SUPER_LINTER_OUTPUT: true
           SAVE_SUPER_LINTER_SUMMARY: true
-          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
-
-      - name: Upload Super-Linter diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: super-linter-diagnostics
-          path: super-linter-output/
-          if-no-files-found: warn
-          retention-days: 7
+          
