@@ -34,24 +34,24 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ## 🛠 Tech Stack
 
-**Backend*
+*_Backend_
 
 - Node.js
 - Express 5
 - JavaScript (ES Modules)
 
-**Database*
+*_Database_
 
 - PostgreSQL
 - `pg` PostgreSQL client and connection pooling
 
-**Validation and Documentation*
+*_Validation and Documentation_
 
 - Zod
 - OpenAPI 3
 - Swagger UI Express
 
-**Testing and Deployment*
+*_Testing and Deployment_
 
 - Node.js built-in test runner (`node:test`)
 - Docker
@@ -59,7 +59,7 @@ The project also focuses on request validation, database transactions, keyset pa
 - GitHub Actions
 - Super-Linter
 
-**Development Tools*
+*_Development Tools_
 
 - Git and GitHub
 - VS Code
@@ -95,20 +95,20 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ## 🗺 API Endpoints
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/health` | Check API and database health |
-| `POST` | `/links` | Create a short link |
-| `GET` | `/:code` | Redirect to the original URL |
-| `GET` | `/links/:code` | Retrieve link metadata |
-| `GET` | `/links/:code/clicks` | Retrieve paginated click history |
-| `GET` | `/links/:code/clicks.csv` | Export click history as CSV |
-| `DELETE` | `/links/:code` | Delete a short link |
-| `GET` | `/docs` | Open interactive API documentation |
+| Method   | Endpoint                  | Description                        |
+| -------- | ------------------------- | ---------------------------------- |
+| `GET`    | `/health`                 | Check API and database health      |
+| `POST`   | `/links`                  | Create a short link                |
+| `GET`    | `/:code`                  | Redirect to the original URL       |
+| `GET`    | `/links/:code`            | Retrieve link metadata             |
+| `GET`    | `/links/:code/clicks`     | Retrieve paginated click history   |
+| `GET`    | `/links/:code/clicks.csv` | Export click history as CSV        |
+| `DELETE` | `/links/:code`            | Delete a short link                |
+| `GET`    | `/docs`                   | Open interactive API documentation |
 
 ### Example: Create a Short Link
 
-**Request*
+*_Request_
 
 ```http
 POST /links
@@ -125,7 +125,7 @@ Content-Type: application/json
 
 The `code` and `expires_at` fields are optional. When a custom code is not supplied, the API generates one automatically.
 
-**Example using curl*
+*_Example using curl_
 
 ```bash
 curl -i -X POST http://localhost:3000/links \
@@ -133,7 +133,7 @@ curl -i -X POST http://localhost:3000/links \
   -d '{"target_url":"https://example.com/articles","code":"my-article"}'
 ```
 
-**Possible responses*
+*_Possible responses_
 
 - `201 Created` — short link created successfully.
 - `400 Bad Request` — invalid request data.

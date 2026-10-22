@@ -30,6 +30,9 @@ jobs:
     name: Lint Code Base
     # Set the agent to run on
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
 
     ##################
     # Load all steps #
@@ -57,4 +60,3 @@ jobs:
           SAVE_SUPER_LINTER_OUTPUT: true
           SAVE_SUPER_LINTER_SUMMARY: true
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
-          
