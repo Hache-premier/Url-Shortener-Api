@@ -128,3 +128,14 @@ export async function listClicksByLinkId(
 
     return result.rows;
 }
+
+export async function deleteLinkByCode(code) {
+    const result = await pool.query(
+        `DELETE FROM links
+        WHERE code = $1
+        RETURNING id, code`,
+        [code],
+    );
+
+    return result.rows[0] ?? null;
+}

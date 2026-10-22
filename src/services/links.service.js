@@ -5,6 +5,7 @@ import {
     recordClickForCode,
     getLinkMetadataByCode,
     listClicksByLinkId,
+    deleteLinkByCode,
 } from "../repositories/links.repository.js";
 import { clickCursorSchema } from "../schemas/link.schema.js";
 
@@ -85,4 +86,56 @@ export async function getShortLinkClicks(code, { after, limit }) {
         clicks,
         next_cursor: nextCursor,
     };
+}
+
+
+export async function getShortLinkClickBatches(code, batchSize = 500) {
+    const link = await getLinkMetadataByCode(code);
+
+    if (!link) {
+        return { status: "not_found" };
+    }
+
+    async function* batches() {
+        let after = null;
+
+        while (true) {
+            const clicks = await listClicksByLinkId(link.id, {
+                after,
+                limit: batchSize,
+            });
+
+            if (clicks.length === 0) {
+                return;
+            }
+
+            yield clicks;
+
+            if (clicks.length < batchSize) {
+                return;
+            }
+
+            const lastClick = clicks[clicks.length - 1];
+
+            after = {
+                clicked_at: new Date(lastClick.clicked_at).toISOString(),
+                id: lastClick.id,
+            };
+        }
+    }
+
+    return {
+        status: "found",
+        batches: batches(),
+    };
+}
+
+export async function deleteShortLink(code) {
+    const deletedLink = await deleteLinkByCode(code);
+
+    if (!deletedLink) {
+        return { status: "not_found" };
+    }
+
+    return { status: "deleted" };
 }
