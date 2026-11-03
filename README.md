@@ -1,6 +1,6 @@
 # 🔗 URL Shortener API
 
-> A RESTful URL Shortener API built with Node.js, Express, and PostgreSQL that converts long URLs into short links, redirects visitors to their destinations, tracks clicks, and provides paginated click history and CSV exports.
+> A RESTful URL Shortener API built with Node.js, Express, and PostgreSQL. It converts long URLs into short links, redirects visitors to their destinations, tracks clicks, and provides paginated click history and CSV exports.
 
 ---
 
@@ -10,7 +10,7 @@ Long URLs can be inconvenient to share, manage, and track. A URL shortening serv
 
 This project demonstrates how to build a backend API that manages short links, handles HTTP redirects, records visitor activity, and stores data reliably using PostgreSQL.
 
-The project also focuses on request validation, database transactions, keyset pagination, automated testing, API documentation, and deployment.
+The project also focuses on request validation, database transactions, keyset pagination, automated testing, API documentation, and database management.
 
 ---
 
@@ -33,30 +33,30 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ## 🛠 Tech Stack
 
-**Backend**
+### Backend
 
 - Node.js
 - Express 5
 - JavaScript (ES Modules)
 
-**Database**
+### Database
 
 - PostgreSQL
 - `pg` PostgreSQL client and connection pooling
 
-**Validation and Documentation**
+### Validation and Documentation
 
 - Zod
 - OpenAPI 3
 - Swagger UI Express
 
-**Testing and Deployment**
+### Testing and Continuous Integration
 
 - Node.js built-in test runner (`node:test`)
 - GitHub Actions
 - Super-Linter
 
-**Development Tools**
+### Development Tools
 
 - Git and GitHub
 - VS Code
@@ -105,14 +105,14 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ### Example: Create a Short Link
 
-**Request**
+*Request**
 
 ```http
 POST /links
 Content-Type: application/json
 ```
 
-**Request body**
+*Request body**
 
 ```json
 {
@@ -124,7 +124,7 @@ Content-Type: application/json
 
 The `code` and `expires_at` fields are optional. When a custom code is not supplied, the API generates one automatically.
 
-**Example using curl**
+*Example using curl**
 
 ```bash
 curl -i -X POST http://localhost:3000/links \
@@ -132,7 +132,7 @@ curl -i -X POST http://localhost:3000/links \
   -d '{"target_url":"https://example.com/articles","code":"my-article"}'
 ```
 
-**Possible responses**
+*Possible responses**
 
 - `201 Created` — short link created successfully.
 - `400 Bad Request` — invalid request data.
@@ -162,7 +162,7 @@ The response includes the code, target URL, creation timestamp, expiry timestamp
 curl -i "http://localhost:3000/links/my-article/clicks?limit=20"
 ```
 
-The API returns the click records and a `next_cursor` value when another page is available. Pass that cursor using the `after` query parameter to retrieve the next page.
+The API returns click records and a `next_cursor` value when another page is available. Pass that cursor using the `after` query parameter to retrieve the next page.
 
 The supported page size is between 1 and 100 records.
 
@@ -190,7 +190,7 @@ A successful deletion returns `204 No Content`. The associated click records are
 
 The application uses two PostgreSQL tables.
 
-**`links`**
+### `links`
 
 Stores:
 
@@ -199,7 +199,7 @@ Stores:
 - Creation and optional expiry timestamps.
 - Total click count.
 
-**`clicks`**
+### `clicks`
 
 Stores:
 
@@ -213,7 +213,7 @@ Stores:
 - Unique constraints prevent duplicate short codes.
 - A check constraint prevents negative click counts.
 - Foreign-key cascading removes clicks when their link is deleted.
-- An index supports click-history queries ordered by timestamp and ID.
+- An index supports click-history queries.
 - Parameterized SQL queries protect database operations from SQL injection.
 - Click-count updates and click-record insertion are performed in one transaction.
 - Keyset pagination avoids relying on offset-based pagination for click history.
@@ -222,7 +222,7 @@ Stores:
 
 ## 📸 Screenshots
 
-The following screenshots demonstrate the interactive API documentation using Swagger UI.
+The following screenshots demonstrate the API documentation and Swagger UI interface.
 
 ![URL Shortener API documentation](docs/images/swagger-ui.png)
 
@@ -238,9 +238,18 @@ The following screenshots demonstrate the interactive API documentation using Sw
 
 ---
 
-## ⚙️ Installation and Setup
+## ⚙ Installation and Setup
 
-### 📥 Clone the Repository
+### Prerequisites
+
+Make sure the following tools are installed:
+
+- Node.js 22 or newer
+- npm
+- PostgreSQL
+- Git
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Hache-premier/Url-Shortener-Api.git
@@ -248,59 +257,238 @@ git clone https://github.com/Hache-premier/Url-Shortener-Api.git
 cd Url-Shortener-Api
 ```
 
-### 📦 Install Dependencies
-
-Make sure Node.js 22 or newer, npm, and PostgreSQL are installed for local development.
-
-Install the project dependencies:
+### 2. Install Dependencies
 
 ```bash
 npm ci
 ```
 
-### 🐘 Install PostgreSQL on Ubuntu
+### 3. Prepare PostgreSQL
 
-If PostgreSQL is not already installed, run:
+Make sure PostgreSQL is installed and running.
 
-```bash
-sudo apt update
+Create a PostgreSQL role and database if they do not already exist.
 
-sudo apt install postgresql postgresql-contrib
-```
-
-Start and enable the PostgreSQL service:
-
-```bash
-sudo systemctl enable --now postgresql
-```
-
-Verify that PostgreSQL is running:
-
-```bash
-sudo systemctl status postgresql
-```
-
-### 🔐 Configure the Database
-
-Open the PostgreSQL administrative shell:
+Open the PostgreSQL shell:
 
 ```bash
 sudo -u postgres psql
 ```
 
-Create the application role and database:
+Create the application role:
 
 ```sql
-CREATE ROLE url_shortener_app
-WITH LOGIN PASSWORD 'your_local_database_password';
-
-CREATE DATABASE url_shortener
-OWNER url_shortener_app;
+CREATE ROLE url_shortener_app WITH LOGIN PASSWORD 'your_local_database_password';
 ```
 
-Exit PostgreSQL:
+Create the development database:
+
+```sql
+CREATE DATABASE url_shortener OWNER url_shortener_app;
+```
+
+Exit the PostgreSQL shell:
 
 ```sql
 \q
-``
 ```
+
+Use your own secure password when creating the role.
+
+### 4. Configure Environment Variables
+
+Create a local environment file from the example:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your local database configuration:
+
+```dotenv
+NODE_ENV=development
+PORT=3000
+BASE_URL=http://localhost:3000
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=url_shortener
+DB_USER=url_shortener_app
+DB_PASSWORD=your_local_database_password
+DB_POOL_MAX=10
+```
+
+Make sure the database credentials match the PostgreSQL role you created.
+
+Never commit real passwords or secrets to GitHub.
+
+### 5. Apply the Database Schema
+
+Run the following command to create the required database tables and constraints:
+
+```bash
+psql -h localhost \
+  -U url_shortener_app \
+  -d url_shortener \
+  -W \
+  -f db/schema.sql
+```
+
+### 6. Seed Sample Data
+
+To add sample links to your local database, run:
+
+```bash
+psql -h localhost \
+  -U url_shortener_app \
+  -d url_shortener \
+  -W \
+  -f db/seed.sql
+```
+
+### 7. Run the Application
+
+Start the development server with automatic restarts:
+
+```bash
+npm run dev
+```
+
+Or start the application normally:
+
+```bash
+npm start
+```
+
+### 8. Check API Health
+
+With the server running, open another terminal and execute:
+
+```bash
+curl -i http://localhost:3000/health
+```
+
+A successful response returns HTTP `200 OK` with the database status set to `connected`.
+
+### 9. Open the API Documentation
+
+With the server running, visit:
+
+- *Swagger UI:** <http://localhost:3000/docs>
+- *OpenAPI specification:** <http://localhost:3000/docs/openapi.yaml>
+
+Swagger UI allows you to inspect the endpoints, examine request schemas, and send API requests interactively.
+
+---
+
+## 🧪 Testing
+
+The project uses Node.js's built-in test runner, so an additional testing framework is not required.
+
+### 1. Prepare the Dedicated Test Database
+
+The integration test suite uses a separate database named `url_shortener_test`.
+
+Create the database if it does not already exist:
+
+```bash
+sudo -u postgres createdb \
+  --owner=url_shortener_app \
+  url_shortener_test
+```
+
+Apply the schema:
+
+```bash
+psql -h localhost \
+  -U url_shortener_app \
+  -d url_shortener_test \
+  -W \
+  -f db/schema.sql
+```
+
+### 2. Run the Tests
+
+```bash
+npm test
+```
+
+### Test Coverage
+
+The integration suite covers:
+
+- Health and database connectivity.
+- Link creation and metadata retrieval.
+- Request validation and duplicate codes.
+- Redirects and link expiration.
+- Click recording and counter updates.
+- Keyset pagination and invalid cursors.
+- Concurrent redirects and click-counter consistency.
+- CSV export.
+- Link deletion and cascading removal of click records.
+- SQL injection regression checks.
+- Swagger UI and OpenAPI documentation routes.
+
+The original project test report records **14 passing integration tests**.
+
+**Database safety:** The test suite clears records from `url_shortener_test` before and after its run. Never point the test suite at your development or production database.
+
+### Continuous Integration
+
+GitHub Actions is configured to run integration tests against a separate PostgreSQL service and run Super-Linter on the repository when code is pushed or pull requests are opened.
+
+---
+
+## 🧠 Challenges Faced
+
+- Designing a clear REST API for short-link management.
+- Validating URLs, custom codes, and expiry timestamps.
+- Recording clicks while maintaining a consistent counter.
+- Handling database transactions and rollback behavior.
+- Implementing keyset pagination using timestamps and IDs.
+- Streaming CSV data without buffering the entire export.
+- Preventing SQL injection through parameterized queries.
+- Keeping automated tests isolated from the development database.
+- Documenting endpoints using OpenAPI and Swagger UI.
+- Configuring automated testing and code-quality checks.
+
+---
+
+## 📚 What I Learned
+
+- How to build REST APIs with Express.
+- How to organize code using controllers, services, repositories, and schemas.
+- How to connect Node.js to PostgreSQL using connection pooling.
+- How to maintain data consistency using transactions.
+- How atomic updates help preserve click-counter accuracy.
+- How keyset pagination works in database-backed APIs.
+- How to validate incoming data using Zod.
+- How to stream responses and export CSV data.
+- How to test API behavior using Node.js's built-in test runner.
+- How to document APIs with OpenAPI and Swagger UI.
+- How to manage PostgreSQL databases for development and testing.
+- How to automate testing and code-quality checks through GitHub Actions.
+
+---
+
+## 🚀 Future Improvements
+
+- Add analytics for top referrers and link performance.
+- Introduce rate limiting for link creation and redirects.
+- Add an expiry-cleanup worker.
+- Implement authentication and user-specific link management.
+- Add QR-code generation for short links.
+- Extend API tests with more failure and edge-case scenarios.
+- Add performance benchmarks for redirects and click-history queries.
+- Deploy the API with a public base URL.
+- Add more detailed monitoring and structured logging.
+
+---
+
+## 👨🏽‍💻 Author
+
+*Ndonwi Ashley Cheo**
+
+Software Engineering
+
+🌍 Based in Cameroon | Passionate about backend development, software engineering, and continuously learning new technologies. 🚀

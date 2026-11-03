@@ -18,9 +18,8 @@ export const createLinkSchema = z.object({
 
 
 export const clickCursorSchema = z.object({
-    clicked_at: z.iso.datetime(),
     id: z.number().int().positive(),
-});
+}).strict();
 
 export const clickPaginationQuerySchema = z.object({
     after: z.preprocess(

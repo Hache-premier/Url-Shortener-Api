@@ -74,11 +74,10 @@ export async function getShortLinkClicks(code, { after, limit }) {
         const lastClick = clicks[clicks.length - 1];
 
         nextCursor = Buffer.from(
-            JSON.stringify({
-                clicked_at: new Date(lastClick.clicked_at).toISOString(),
-                id: lastClick.id,
-            }),
-        ).toString("base64url");
+    JSON.stringify({
+        id: lastClick.id,
+    }),
+).toString("base64url");
     }
 
     return {
@@ -118,8 +117,7 @@ export async function getShortLinkClickBatches(code, batchSize = 500) {
             const lastClick = clicks[clicks.length - 1];
 
             after = {
-                clicked_at: new Date(lastClick.clicked_at).toISOString(),
-                id: lastClick.id,
+              id: lastClick.id,
             };
         }
     }
