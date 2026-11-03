@@ -51,4 +51,26 @@ app.use("/links", linksRouter);
 
 app.get("/:code", redirectLinkController);
 
+app.use((error, req, res, next) => {
+    if (res.headersSent) {
+        return next(error);
+    }
+
+    if (
+        error instanceof SyntaxError &&
+        error.status === 400 &&
+        "body" in error
+    ) {
+        return res.status(400).json({
+            error: "Invalid JSON payload",
+        });
+    }
+
+    console.error("Unhandled application error:", error.message);
+
+    return res.status(500).json({
+        error: "Internal server error",
+    });
+});
+
 export default app;

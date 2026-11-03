@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createLinkSchema = z.object({
     target_url: z.url({
-        protocol: /^https?$/ ,
+        protocol: /^https?$/,
     }),
     code: z
         .string()
@@ -10,12 +10,28 @@ export const createLinkSchema = z.object({
         .min(3)
         .max(16)
         .regex(/^[A-Za-z0-9_-]+$/)
+        .refine(
+            (code) =>
+                !["health", "docs", "links"].includes(
+                    code.toLowerCase(),
+                ),
+            {
+                message: "This short code is reserved",
+            },
+        )
         .optional(),
-    expires_at: z.iso.datetime({
+    expires_at: z.iso
+    .datetime({
         offset: true,
-    }).optional(),
+    })
+    .refine(
+        (expiresAt) => new Date(expiresAt).getTime() > Date.now(),
+        {
+            message: "Expiration date must be in the future",
+        },
+    )
+    .optional(),
 }).strict();
-
 
 export const clickCursorSchema = z.object({
     id: z.number().int().positive(),

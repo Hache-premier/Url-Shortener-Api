@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+
 import { randomBytes } from "node:crypto";
+
 import { after, before, test } from "node:test";
 
 const TEST_DATABASE = "url_shortener_test";
@@ -106,6 +108,28 @@ async function createLink(options = {}) {
     return { response, payload, code };
 }
 
+test("malformed JSON returns a clean JSON error response", async () => {
+    const response = await fetch(`${baseUrl}/links`, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+        },
+        body: '{"target_url":',
+    });
+
+    const payload = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.match(
+        response.headers.get("content-type"),
+        /application\/json/,
+    );
+    assert.deepEqual(payload, {
+        error: "Invalid JSON payload",
+    });
+    assert.equal("stack" in payload, false);
+});
+
 test("GET /health confirms the database connection", async () => {
     const response = await fetch(`${baseUrl}/health`);
     const payload = await response.json();
@@ -162,6 +186,52 @@ test("POST /links rejects invalid input and duplicate codes", async () => {
     assert.equal(second.response.status, 409);
 });
 
+test("POST /links rejects expiration dates in the past", async () => {
+    const response = await postLink({
+        target_url: "https://example.com",
+        expires_at: new Date(Date.now() - 60_000).toISOString(),
+    });
+
+    const payload = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(payload.error, "Invalid request body");
+    assert.ok(
+        payload.details.some(
+            (issue) =>
+                issue.message ===
+                "Expiration date must be in the future",
+        ),
+    );
+});
+
+test("POST /links rejects reserved short codes", async () => {
+    const reservedCodes = [
+        "health",
+        "HEALTH",
+        "Health",
+        "docs",
+        "DOCS",
+        "Docs",
+        "links",
+        "LINKS",
+        "Links",
+    ];
+
+    for (const code of reservedCodes) {
+        const response = await postLink({
+            target_url: "https://example.com",
+            code,
+        });
+
+        assert.equal(
+            response.status,
+            400,
+            `Expected reserved code "${code}" to be rejected`,
+        );
+    }
+});
+
 test("redirecting records a click and increments the counter", async () => {
     const { code } = await createLink();
 
@@ -202,11 +272,18 @@ test("redirecting records a click and increments the counter", async () => {
 });
 
 test("expired links return 410 without recording a click", async () => {
-    const { response, code } = await createLink({
-        expires_at: new Date(Date.now() - 60_000).toISOString(),
+    const { response, payload, code } = await createLink({
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
     });
 
     assert.equal(response.status, 201);
+
+    await pool.query(
+        `UPDATE links
+        SET expires_at = NOW() - INTERVAL '1 minute'
+        WHERE id = $1`,
+        [payload.id],
+    );
 
     const redirectResponse = await fetch(`${baseUrl}/${code}`, {
         redirect: "manual",
@@ -416,4 +493,56 @@ test("GET /docs/openapi.yaml serves the OpenAPI specification", async () => {
     assert.match(yaml, /^openapi: 3\.0\.3$/m);
     assert.match(yaml, /\/links\/\{code\}\/clicks\.csv/);
     assert.match(yaml, /\/health:/);
+});
+
+test("click pagination retrieves all 60 concurrent clicks without duplicates", async () => {
+    const { code } = await createLink();
+    const numberOfClicks = 60;
+    const pageLimit = 7;
+
+    const responses = await Promise.all(
+        Array.from({ length: numberOfClicks }, () =>
+            fetch(`${baseUrl}/${code}`, {
+                redirect: "manual",
+            }),
+        ),
+    );
+
+    assert.ok(responses.every((response) => response.status === 302));
+
+    const allClicks = [];
+    let cursor = null;
+
+    while (true) {
+        const query = new URLSearchParams({
+            limit: String(pageLimit),
+        });
+
+        if (cursor) {
+            query.set("after", cursor);
+        }
+
+        const response = await fetch(
+            `${baseUrl}/links/${code}/clicks?${query}`,
+        );
+
+        assert.equal(response.status, 200);
+
+        const page = await response.json();
+
+        allClicks.push(...page.clicks);
+
+        cursor = page.next_cursor;
+
+        if (!cursor) {
+            break;
+        }
+    }
+
+    const uniqueIds = new Set(
+        allClicks.map((click) => click.id),
+    );
+
+    assert.equal(allClicks.length, numberOfClicks);
+    assert.equal(uniqueIds.size, numberOfClicks);
 });
