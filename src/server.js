@@ -1,11 +1,11 @@
-
 import "dotenv/config";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT || 3000);
+const HOST = "0.0.0.0";
 
-const server = app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running on port ${PORT}`);
 });
 
 async function shutdown() {
