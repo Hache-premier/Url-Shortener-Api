@@ -5,17 +5,17 @@ const PORT = Number(process.env.PORT || 3000);
 const HOST = "0.0.0.0";
 
 const server = app.listen(PORT, HOST, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 async function shutdown() {
-    console.log("Shutting down server...");
+  console.log("Shutting down server...");
 
-    server.close(async () => {
-        const { pool } = await import("./db.js");
-        await pool.end();
-        process.exit(0);
-    });
+  server.close(async () => {
+    const { pool } = await import("./db.js");
+    await pool.end();
+    process.exit(0);
+  });
 }
 
 process.on("SIGINT", shutdown);

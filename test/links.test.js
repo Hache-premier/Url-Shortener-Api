@@ -7,9 +7,7 @@ import { after, before, test } from "node:test";
 const TEST_DATABASE = "url_shortener_test";
 
 if (process.env.DB_NAME && process.env.DB_NAME !== TEST_DATABASE) {
-    throw new Error(
-        `Refusing to run tests: DB_NAME must be ${TEST_DATABASE}.`,
-    );
+  throw new Error(`Refusing to run tests: DB_NAME must be ${TEST_DATABASE}.`);
 }
 
 process.env.NODE_ENV = "test";
@@ -22,527 +20,488 @@ let server;
 let baseUrl;
 
 before(async () => {
-    const result = await pool.query(
-        "SELECT current_database() AS database",
-    );
+  const result = await pool.query("SELECT current_database() AS database");
 
-    assert.equal(
-        result.rows[0]?.database,
-        TEST_DATABASE,
-        `Tests must use ${TEST_DATABASE}.`,
-    );
+  assert.equal(
+    result.rows[0]?.database,
+    TEST_DATABASE,
+    `Tests must use ${TEST_DATABASE}.`,
+  );
 
-    await pool.query(
-        "TRUNCATE TABLE clicks, links RESTART IDENTITY CASCADE",
-    );
+  await pool.query("TRUNCATE TABLE clicks, links RESTART IDENTITY CASCADE");
 
-    server = app.listen(0, "127.0.0.1");
+  server = app.listen(0, "127.0.0.1");
 
-    await new Promise((resolve, reject) => {
-        server.once("listening", resolve);
-        server.once("error", reject);
-    });
+  await new Promise((resolve, reject) => {
+    server.once("listening", resolve);
+    server.once("error", reject);
+  });
 
-    const address = server.address();
+  const address = server.address();
 
-    assert.ok(address && typeof address === "object");
+  assert.ok(address && typeof address === "object");
 
-    baseUrl = `http://127.0.0.1:${address.port}`;
-    process.env.BASE_URL = baseUrl;
+  baseUrl = `http://127.0.0.1:${address.port}`;
+  process.env.BASE_URL = baseUrl;
 });
 
 after(async () => {
-    try {
-        if (server?.listening) {
-            await new Promise((resolve, reject) => {
-                server.close((error) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        resolve();
-                    }
-                });
-            });
-        }
-
-        const result = await pool.query(
-            "SELECT current_database() AS database",
-        );
-
-        if (result.rows[0]?.database === TEST_DATABASE) {
-            await pool.query(
-                "TRUNCATE TABLE clicks, links RESTART IDENTITY CASCADE",
-            );
-        }
-    } finally {
-        await pool.end();
+  try {
+    if (server?.listening) {
+      await new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
     }
+
+    const result = await pool.query("SELECT current_database() AS database");
+
+    if (result.rows[0]?.database === TEST_DATABASE) {
+      await pool.query("TRUNCATE TABLE clicks, links RESTART IDENTITY CASCADE");
+    }
+  } finally {
+    await pool.end();
+  }
 });
 
 async function postLink(body) {
-    return fetch(`${baseUrl}/links`, {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-        },
-        body: JSON.stringify(body),
-    });
+  return fetch(`${baseUrl}/links`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 }
 
 async function createLink(options = {}) {
-    const code =
-        options.code ?? `test-${randomBytes(5).toString("hex")}`;
+  const code = options.code ?? `test-${randomBytes(5).toString("hex")}`;
 
-    const body = {
-        target_url:
-            options.target_url ?? "https://example.com/article",
-        code,
-        ...(options.expires_at !== undefined
-            ? { expires_at: options.expires_at }
-            : {}),
-    };
+  const body = {
+    target_url: options.target_url ?? "https://example.com/article",
+    code,
+    ...(options.expires_at !== undefined
+      ? { expires_at: options.expires_at }
+      : {}),
+  };
 
-    const response = await postLink(body);
-    const payload = await response.json();
+  const response = await postLink(body);
+  const payload = await response.json();
 
-    return { response, payload, code };
+  return { response, payload, code };
 }
 
 test("malformed JSON returns a clean JSON error response", async () => {
-    const response = await fetch(`${baseUrl}/links`, {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-        },
-        body: '{"target_url":',
-    });
+  const response = await fetch(`${baseUrl}/links`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: '{"target_url":',
+  });
 
-    const payload = await response.json();
+  const payload = await response.json();
 
-    assert.equal(response.status, 400);
-    assert.match(
-        response.headers.get("content-type"),
-        /application\/json/,
-    );
-    assert.deepEqual(payload, {
-        error: "Invalid JSON payload",
-    });
-    assert.equal("stack" in payload, false);
+  assert.equal(response.status, 400);
+  assert.match(response.headers.get("content-type"), /application\/json/);
+  assert.deepEqual(payload, {
+    error: "Invalid JSON payload",
+  });
+  assert.equal("stack" in payload, false);
 });
 
 test("GET /health confirms the database connection", async () => {
-    const response = await fetch(`${baseUrl}/health`);
-    const payload = await response.json();
+  const response = await fetch(`${baseUrl}/health`);
+  const payload = await response.json();
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(payload, {
-        status: "ok",
-        database: "connected",
-    });
+  assert.equal(response.status, 200);
+  assert.deepEqual(payload, {
+    status: "ok",
+    database: "connected",
+  });
 });
 
 test("POST /links creates a link and GET metadata retrieves it", async () => {
-    const { response, payload, code } = await createLink();
+  const { response, payload, code } = await createLink();
 
-    assert.equal(response.status, 201);
-    assert.equal(payload.code, code);
-    assert.equal(payload.target_url, "https://example.com/article");
-    assert.equal(payload.click_count, 0);
-    assert.equal(payload.short_url, `${baseUrl}/${code}`);
+  assert.equal(response.status, 201);
+  assert.equal(payload.code, code);
+  assert.equal(payload.target_url, "https://example.com/article");
+  assert.equal(payload.click_count, 0);
+  assert.equal(payload.short_url, `${baseUrl}/${code}`);
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
-    const metadata = await metadataResponse.json();
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadata = await metadataResponse.json();
 
-    assert.equal(metadataResponse.status, 200);
-    assert.equal(metadata.code, code);
-    assert.equal(metadata.click_count, 0);
+  assert.equal(metadataResponse.status, 200);
+  assert.equal(metadata.code, code);
+  assert.equal(metadata.click_count, 0);
 });
 
 test("POST /links rejects invalid input and duplicate codes", async () => {
-    const invalidUrlResponse = await postLink({
-        target_url: "javascript:alert(1)",
-        code: "invalid-url",
-    });
+  const invalidUrlResponse = await postLink({
+    target_url: "javascript:alert(1)",
+    code: "invalid-url",
+  });
 
-    assert.equal(invalidUrlResponse.status, 400);
+  assert.equal(invalidUrlResponse.status, 400);
 
-    const invalidCodeResponse = await postLink({
-        target_url: "https://example.com",
-        code: "bad code",
-    });
+  const invalidCodeResponse = await postLink({
+    target_url: "https://example.com",
+    code: "bad code",
+  });
 
-    assert.equal(invalidCodeResponse.status, 400);
+  assert.equal(invalidCodeResponse.status, 400);
 
-    const first = await createLink({
-        code: "duplicate-test",
-    });
+  const first = await createLink({
+    code: "duplicate-test",
+  });
 
-    assert.equal(first.response.status, 201);
+  assert.equal(first.response.status, 201);
 
-    const second = await createLink({
-        code: "duplicate-test",
-    });
+  const second = await createLink({
+    code: "duplicate-test",
+  });
 
-    assert.equal(second.response.status, 409);
+  assert.equal(second.response.status, 409);
 });
 
 test("POST /links rejects expiration dates in the past", async () => {
-    const response = await postLink({
-        target_url: "https://example.com",
-        expires_at: new Date(Date.now() - 60_000).toISOString(),
-    });
+  const response = await postLink({
+    target_url: "https://example.com",
+    expires_at: new Date(Date.now() - 60_000).toISOString(),
+  });
 
-    const payload = await response.json();
+  const payload = await response.json();
 
-    assert.equal(response.status, 400);
-    assert.equal(payload.error, "Invalid request body");
-    assert.ok(
-        payload.details.some(
-            (issue) =>
-                issue.message ===
-                "Expiration date must be in the future",
-        ),
-    );
+  assert.equal(response.status, 400);
+  assert.equal(payload.error, "Invalid request body");
+  assert.ok(
+    payload.details.some(
+      (issue) => issue.message === "Expiration date must be in the future",
+    ),
+  );
 });
 
 test("POST /links rejects reserved short codes", async () => {
-    const reservedCodes = [
-        "health",
-        "HEALTH",
-        "Health",
-        "docs",
-        "DOCS",
-        "Docs",
-        "links",
-        "LINKS",
-        "Links",
-    ];
+  const reservedCodes = [
+    "health",
+    "HEALTH",
+    "Health",
+    "docs",
+    "DOCS",
+    "Docs",
+    "links",
+    "LINKS",
+    "Links",
+  ];
 
-    for (const code of reservedCodes) {
-        const response = await postLink({
-            target_url: "https://example.com",
-            code,
-        });
+  for (const code of reservedCodes) {
+    const response = await postLink({
+      target_url: "https://example.com",
+      code,
+    });
 
-        assert.equal(
-            response.status,
-            400,
-            `Expected reserved code "${code}" to be rejected`,
-        );
-    }
+    assert.equal(
+      response.status,
+      400,
+      `Expected reserved code "${code}" to be rejected`,
+    );
+  }
 });
 
 test("redirecting records a click and increments the counter", async () => {
-    const { code } = await createLink();
+  const { code } = await createLink();
 
-    const redirectResponse = await fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-        headers: {
-            referer: "https://source.example/article",
-            "user-agent": "url-shortener-test-agent",
-        },
-    });
+  const redirectResponse = await fetch(`${baseUrl}/${code}`, {
+    redirect: "manual",
+    headers: {
+      referer: "https://source.example/article",
+      "user-agent": "url-shortener-test-agent",
+    },
+  });
 
-    assert.equal(redirectResponse.status, 302);
-    assert.equal(
-        redirectResponse.headers.get("location"),
-        "https://example.com/article",
-    );
+  assert.equal(redirectResponse.status, 302);
+  assert.equal(
+    redirectResponse.headers.get("location"),
+    "https://example.com/article",
+  );
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
-    const metadata = await metadataResponse.json();
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadata = await metadataResponse.json();
 
-    assert.equal(metadata.click_count, 1);
+  assert.equal(metadata.click_count, 1);
 
-    const clicksResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?limit=10`,
-    );
-    const clickLog = await clicksResponse.json();
+  const clicksResponse = await fetch(
+    `${baseUrl}/links/${code}/clicks?limit=10`,
+  );
+  const clickLog = await clicksResponse.json();
 
-    assert.equal(clicksResponse.status, 200);
-    assert.equal(clickLog.clicks.length, 1);
-    assert.equal(
-        clickLog.clicks[0].referrer,
-        "https://source.example/article",
-    );
-    assert.equal(
-        clickLog.clicks[0].user_agent,
-        "url-shortener-test-agent",
-    );
+  assert.equal(clicksResponse.status, 200);
+  assert.equal(clickLog.clicks.length, 1);
+  assert.equal(clickLog.clicks[0].referrer, "https://source.example/article");
+  assert.equal(clickLog.clicks[0].user_agent, "url-shortener-test-agent");
 });
 
 test("expired links return 410 without recording a click", async () => {
-    const { response, payload, code } = await createLink({
-        expires_at: new Date(Date.now() + 60_000).toISOString(),
-    });
+  const { response, payload, code } = await createLink({
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+  });
 
-    assert.equal(response.status, 201);
+  assert.equal(response.status, 201);
 
-    await pool.query(
-        `UPDATE links
+  await pool.query(
+    `UPDATE links
         SET expires_at = NOW() - INTERVAL '1 minute'
         WHERE id = $1`,
-        [payload.id],
-    );
+    [payload.id],
+  );
 
-    const redirectResponse = await fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-    });
+  const redirectResponse = await fetch(`${baseUrl}/${code}`, {
+    redirect: "manual",
+  });
 
-    assert.equal(redirectResponse.status, 410);
+  assert.equal(redirectResponse.status, 410);
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
-    const metadata = await metadataResponse.json();
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadata = await metadataResponse.json();
 
-    assert.equal(metadata.click_count, 0);
+  assert.equal(metadata.click_count, 0);
 });
 
 test("unknown links return 404", async () => {
-    const metadataResponse = await fetch(
-        `${baseUrl}/links/missing-test-link`,
-    );
-    const redirectResponse = await fetch(
-        `${baseUrl}/missing-test-link`,
-        { redirect: "manual" },
-    );
+  const metadataResponse = await fetch(`${baseUrl}/links/missing-test-link`);
+  const redirectResponse = await fetch(`${baseUrl}/missing-test-link`, {
+    redirect: "manual",
+  });
 
-    assert.equal(metadataResponse.status, 404);
-    assert.equal(redirectResponse.status, 404);
+  assert.equal(metadataResponse.status, 404);
+  assert.equal(redirectResponse.status, 404);
 });
 
 test("click pagination uses a cursor without duplicating results", async () => {
-    const { code } = await createLink();
+  const { code } = await createLink();
 
-    for (let index = 0; index < 3; index += 1) {
-        const response = await fetch(`${baseUrl}/${code}`, {
-            redirect: "manual",
-        });
+  for (let index = 0; index < 3; index += 1) {
+    const response = await fetch(`${baseUrl}/${code}`, {
+      redirect: "manual",
+    });
 
-        assert.equal(response.status, 302);
-    }
+    assert.equal(response.status, 302);
+  }
 
-    const firstResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?limit=2`,
-    );
-    const firstPage = await firstResponse.json();
+  const firstResponse = await fetch(`${baseUrl}/links/${code}/clicks?limit=2`);
+  const firstPage = await firstResponse.json();
 
-    assert.equal(firstResponse.status, 200);
-    assert.equal(firstPage.clicks.length, 2);
-    assert.ok(firstPage.next_cursor);
+  assert.equal(firstResponse.status, 200);
+  assert.equal(firstPage.clicks.length, 2);
+  assert.ok(firstPage.next_cursor);
 
-    const secondResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?limit=2&after=${encodeURIComponent(firstPage.next_cursor)}`,
-    );
-    const secondPage = await secondResponse.json();
+  const secondResponse = await fetch(
+    `${baseUrl}/links/${code}/clicks?limit=2&after=${encodeURIComponent(firstPage.next_cursor)}`,
+  );
+  const secondPage = await secondResponse.json();
 
-    assert.equal(secondResponse.status, 200);
-    assert.equal(secondPage.clicks.length, 1);
-    assert.equal(secondPage.next_cursor, null);
+  assert.equal(secondResponse.status, 200);
+  assert.equal(secondPage.clicks.length, 1);
+  assert.equal(secondPage.next_cursor, null);
 
-    const allClicks = [...firstPage.clicks, ...secondPage.clicks];
-    const uniqueIds = new Set(allClicks.map((click) => click.id));
+  const allClicks = [...firstPage.clicks, ...secondPage.clicks];
+  const uniqueIds = new Set(allClicks.map((click) => click.id));
 
-    assert.equal(allClicks.length, 3);
-    assert.equal(uniqueIds.size, 3);
+  assert.equal(allClicks.length, 3);
+  assert.equal(uniqueIds.size, 3);
 });
 
 test("click pagination rejects invalid cursors and oversized limits", async () => {
-    const { code } = await createLink();
+  const { code } = await createLink();
 
-    const cursorResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?after=not-a-valid-cursor`,
-    );
+  const cursorResponse = await fetch(
+    `${baseUrl}/links/${code}/clicks?after=not-a-valid-cursor`,
+  );
 
-    assert.equal(cursorResponse.status, 400);
+  assert.equal(cursorResponse.status, 400);
 
-    const limitResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?limit=500`,
-    );
+  const limitResponse = await fetch(
+    `${baseUrl}/links/${code}/clicks?limit=500`,
+  );
 
-    assert.equal(limitResponse.status, 400);
+  assert.equal(limitResponse.status, 400);
 });
 
 test("parallel redirects preserve the click counter", async () => {
-    const { code } = await createLink();
-    const numberOfClicks = 8;
+  const { code } = await createLink();
+  const numberOfClicks = 8;
 
-    const responses = await Promise.all(
-        Array.from({ length: numberOfClicks }, () =>
-            fetch(`${baseUrl}/${code}`, {
-                redirect: "manual",
-            }),
-        ),
-    );
+  const responses = await Promise.all(
+    Array.from({ length: numberOfClicks }, () =>
+      fetch(`${baseUrl}/${code}`, {
+        redirect: "manual",
+      }),
+    ),
+  );
 
-    assert.ok(responses.every((response) => response.status === 302));
+  assert.ok(responses.every((response) => response.status === 302));
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
-    const metadata = await metadataResponse.json();
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadata = await metadataResponse.json();
 
-    const clicksResponse = await fetch(
-        `${baseUrl}/links/${code}/clicks?limit=100`,
-    );
-    const clickLog = await clicksResponse.json();
+  const clicksResponse = await fetch(
+    `${baseUrl}/links/${code}/clicks?limit=100`,
+  );
+  const clickLog = await clicksResponse.json();
 
-    assert.equal(metadata.click_count, numberOfClicks);
-    assert.equal(clickLog.clicks.length, numberOfClicks);
+  assert.equal(metadata.click_count, numberOfClicks);
+  assert.equal(clickLog.clicks.length, numberOfClicks);
 });
 
 test("click export returns a CSV file with recorded click data", async () => {
-    const { code } = await createLink();
+  const { code } = await createLink();
 
-    await fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-        headers: {
-            referer: "https://source.example/csv",
-            "user-agent": "csv-test-agent",
-        },
-    });
+  await fetch(`${baseUrl}/${code}`, {
+    redirect: "manual",
+    headers: {
+      referer: "https://source.example/csv",
+      "user-agent": "csv-test-agent",
+    },
+  });
 
-    const response = await fetch(
-        `${baseUrl}/links/${code}/clicks.csv`,
-    );
-    const csv = await response.text();
+  const response = await fetch(`${baseUrl}/links/${code}/clicks.csv`);
+  const csv = await response.text();
 
-    assert.equal(response.status, 200);
-    assert.match(response.headers.get("content-type"), /text\/csv/);
-    assert.match(
-        response.headers.get("content-disposition"),
-        /attachment; filename="clicks\.csv"/,
-    );
-    assert.ok(csv.startsWith("id,clicked_at,referrer,user_agent\r\n"));
-    assert.ok(csv.includes('"https://source.example/csv"'));
-    assert.ok(csv.includes('"csv-test-agent"'));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /text\/csv/);
+  assert.match(
+    response.headers.get("content-disposition"),
+    /attachment; filename="clicks\.csv"/,
+  );
+  assert.ok(csv.startsWith("id,clicked_at,referrer,user_agent\r\n"));
+  assert.ok(csv.includes('"https://source.example/csv"'));
+  assert.ok(csv.includes('"csv-test-agent"'));
 });
 
 test("deleting a link removes its associated click records", async () => {
-    const { code, payload } = await createLink();
+  const { code, payload } = await createLink();
 
-    await fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-    });
+  await fetch(`${baseUrl}/${code}`, {
+    redirect: "manual",
+  });
 
-    const deleteResponse = await fetch(`${baseUrl}/links/${code}`, {
-        method: "DELETE",
-    });
+  const deleteResponse = await fetch(`${baseUrl}/links/${code}`, {
+    method: "DELETE",
+  });
 
-    assert.equal(deleteResponse.status, 204);
+  assert.equal(deleteResponse.status, 204);
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
 
-    assert.equal(metadataResponse.status, 404);
+  assert.equal(metadataResponse.status, 404);
 
-    const clickCount = await pool.query(
-        "SELECT COUNT(*)::int AS count FROM clicks WHERE link_id = $1",
-        [payload.id],
-    );
+  const clickCount = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM clicks WHERE link_id = $1",
+    [payload.id],
+  );
 
-    assert.equal(clickCount.rows[0].count, 0);
+  assert.equal(clickCount.rows[0].count, 0);
 
-    const secondDeleteResponse = await fetch(
-        `${baseUrl}/links/${code}`,
-        { method: "DELETE" },
-    );
+  const secondDeleteResponse = await fetch(`${baseUrl}/links/${code}`, {
+    method: "DELETE",
+  });
 
-    assert.equal(secondDeleteResponse.status, 404);
+  assert.equal(secondDeleteResponse.status, 404);
 });
 
 test("SQL injection-like codes cannot expose other links or remove tables", async () => {
-    const { code } = await createLink();
+  const { code } = await createLink();
 
-    const injection = encodeURIComponent("' OR '1'='1");
-    const response = await fetch(`${baseUrl}/links/${injection}`);
+  const injection = encodeURIComponent("' OR '1'='1");
+  const response = await fetch(`${baseUrl}/links/${injection}`);
 
-    assert.equal(response.status, 404);
+  assert.equal(response.status, 404);
 
-    const tables = await pool.query(`
+  const tables = await pool.query(`
         SELECT
             to_regclass('public.links') AS links_table,
             to_regclass('public.clicks') AS clicks_table
     `);
 
-    assert.equal(tables.rows[0].links_table, "links");
-    assert.equal(tables.rows[0].clicks_table, "clicks");
+  assert.equal(tables.rows[0].links_table, "links");
+  assert.equal(tables.rows[0].clicks_table, "clicks");
 
-    const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
+  const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
 
-    assert.equal(metadataResponse.status, 200);
+  assert.equal(metadataResponse.status, 200);
 });
 
 test("GET /docs serves the Swagger UI page", async () => {
-    const response = await fetch(`${baseUrl}/docs/`);
-    const html = await response.text();
+  const response = await fetch(`${baseUrl}/docs/`);
+  const html = await response.text();
 
-    assert.equal(response.status, 200);
-    assert.match(
-        response.headers.get("content-type") ?? "",
-        /text\/html/,
-    );
-    assert.match(html, /swagger-ui/i);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /text\/html/);
+  assert.match(html, /swagger-ui/i);
 });
 
 test("GET /docs/openapi.yaml serves the OpenAPI specification", async () => {
-    const response = await fetch(`${baseUrl}/docs/openapi.yaml`);
-    const yaml = await response.text();
+  const response = await fetch(`${baseUrl}/docs/openapi.yaml`);
+  const yaml = await response.text();
 
-    assert.equal(response.status, 200);
-    assert.match(
-        response.headers.get("content-type") ?? "",
-        /text\/yaml/,
-    );
-    assert.match(yaml, /^openapi: 3\.0\.3$/m);
-    assert.match(yaml, /\/links\/\{code\}\/clicks\.csv/);
-    assert.match(yaml, /\/health:/);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /text\/yaml/);
+  assert.match(yaml, /^openapi: 3\.0\.3$/m);
+  assert.match(yaml, /\/links\/\{code\}\/clicks\.csv/);
+  assert.match(yaml, /\/health:/);
 });
 
 test("click pagination retrieves all 60 concurrent clicks without duplicates", async () => {
-    const { code } = await createLink();
-    const numberOfClicks = 60;
-    const pageLimit = 7;
+  const { code } = await createLink();
+  const numberOfClicks = 60;
+  const pageLimit = 7;
 
-    const responses = await Promise.all(
-        Array.from({ length: numberOfClicks }, () =>
-            fetch(`${baseUrl}/${code}`, {
-                redirect: "manual",
-            }),
-        ),
-    );
+  const responses = await Promise.all(
+    Array.from({ length: numberOfClicks }, () =>
+      fetch(`${baseUrl}/${code}`, {
+        redirect: "manual",
+      }),
+    ),
+  );
 
-    assert.ok(responses.every((response) => response.status === 302));
+  assert.ok(responses.every((response) => response.status === 302));
 
-    const allClicks = [];
-    let cursor = null;
+  const allClicks = [];
+  let cursor = null;
 
-    while (true) {
-        const query = new URLSearchParams({
-            limit: String(pageLimit),
-        });
+  while (true) {
+    const query = new URLSearchParams({
+      limit: String(pageLimit),
+    });
 
-        if (cursor) {
-            query.set("after", cursor);
-        }
-
-        const response = await fetch(
-            `${baseUrl}/links/${code}/clicks?${query}`,
-        );
-
-        assert.equal(response.status, 200);
-
-        const page = await response.json();
-
-        allClicks.push(...page.clicks);
-
-        cursor = page.next_cursor;
-
-        if (!cursor) {
-            break;
-        }
+    if (cursor) {
+      query.set("after", cursor);
     }
 
-    const uniqueIds = new Set(
-        allClicks.map((click) => click.id),
-    );
+    const response = await fetch(`${baseUrl}/links/${code}/clicks?${query}`);
 
-    assert.equal(allClicks.length, numberOfClicks);
-    assert.equal(uniqueIds.size, numberOfClicks);
+    assert.equal(response.status, 200);
+
+    const page = await response.json();
+
+    allClicks.push(...page.clicks);
+
+    cursor = page.next_cursor;
+
+    if (!cursor) {
+      break;
+    }
+  }
+
+  const uniqueIds = new Set(allClicks.map((click) => click.id));
+
+  assert.equal(allClicks.length, numberOfClicks);
+  assert.equal(uniqueIds.size, numberOfClicks);
 });

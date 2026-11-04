@@ -9,42 +9,42 @@ import { redirectLinkController } from "./controllers/links.controller.js";
 const app = express();
 
 const openApiYaml = readFileSync(
-    new URL("../docs/openapi.yaml", import.meta.url),
-    "utf8",
+  new URL("../docs/openapi.yaml", import.meta.url),
+  "utf8",
 );
 
 app.use(express.json());
 
 app.get("/health", async (req, res) => {
-    try {
-        await pool.query("SELECT 1");
+  try {
+    await pool.query("SELECT 1");
 
-        return res.status(200).json({
-            status: "ok",
-            database: "connected",
-        });
-    } catch (error) {
-        console.error("Health check failed:", error.message);
+    return res.status(200).json({
+      status: "ok",
+      database: "connected",
+    });
+  } catch (error) {
+    console.error("Health check failed:", error.message);
 
-        return res.status(503).json({
-            status: "error",
-            database: "unavailable",
-        });
-    }
+    return res.status(503).json({
+      status: "error",
+      database: "unavailable",
+    });
+  }
 });
 
 app.get("/docs/openapi.yaml", (req, res) => {
-    return res.type("text/yaml").send(openApiYaml);
+  return res.type("text/yaml").send(openApiYaml);
 });
 
 app.use(
-    "/docs",
-    swaggerUi.serve,
-    swaggerUi.setup(null, {
-        swaggerOptions: {
-            url: "/docs/openapi.yaml",
-        },
-    }),
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(null, {
+    swaggerOptions: {
+      url: "/docs/openapi.yaml",
+    },
+  }),
 );
 
 app.use("/links", linksRouter);
@@ -52,25 +52,21 @@ app.use("/links", linksRouter);
 app.get("/:code", redirectLinkController);
 
 app.use((error, req, res, next) => {
-    if (res.headersSent) {
-        return next(error);
-    }
+  if (res.headersSent) {
+    return next(error);
+  }
 
-    if (
-        error instanceof SyntaxError &&
-        error.status === 400 &&
-        "body" in error
-    ) {
-        return res.status(400).json({
-            error: "Invalid JSON payload",
-        });
-    }
-
-    console.error("Unhandled application error:", error.message);
-
-    return res.status(500).json({
-        error: "Internal server error",
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({
+      error: "Invalid JSON payload",
     });
+  }
+
+  console.error("Unhandled application error:", error.message);
+
+  return res.status(500).json({
+    error: "Internal server error",
+  });
 });
 
 export default app;

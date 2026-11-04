@@ -1,11 +1,10 @@
-
 import { Router } from "express";
 import {
-    createLinkController,
-    getLinkMetadataController,
-    getLinkClicksController,
-    exportClicksCsvController,
-    deleteLinkController,
+  createLinkController,
+  getLinkMetadataController,
+  getLinkClicksController,
+  exportClicksCsvController,
+  deleteLinkController,
 } from "../controllers/links.controller.js";
 
 const linksRouter = Router();
