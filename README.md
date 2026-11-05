@@ -105,14 +105,14 @@ The project also focuses on request validation, database transactions, keyset pa
 
 ### Example: Create a Short Link
 
-_Request_*
+_Request_\*
 
 ```http
 POST /links
 Content-Type: application/json
 ```
 
-_Request body_*
+_Request body_\*
 
 ```json
 {
@@ -124,7 +124,7 @@ _Request body_*
 
 The `code` and `expires_at` fields are optional. When a custom code is not supplied, the API generates one automatically.
 
-_Example using curl_*
+_Example using curl_\*
 
 ```bash
 curl -i -X POST http://localhost:3000/links \
@@ -132,7 +132,7 @@ curl -i -X POST http://localhost:3000/links \
   -d '{"target_url":"https://example.com/articles","code":"my-article"}'
 ```
 
-_Possible responses_*
+_Possible responses_\*
 
 - `201 Created` — short link created successfully.
 - `400 Bad Request` — invalid request data.
@@ -374,8 +374,8 @@ A successful response returns HTTP `200 OK` with the database status set to `con
 
 With the server running, visit:
 
-- _Swagger UI:_* <http://localhost:3000/docs>
-- _OpenAPI specification:_* <http://localhost:3000/docs/openapi.yaml>
+- _Swagger UI:_\* <http://localhost:3000/docs>
+- _OpenAPI specification:_\* <http://localhost:3000/docs/openapi.yaml>
 
 Swagger UI allows you to inspect the endpoints, examine request schemas, and send API requests interactively.
 
@@ -487,7 +487,7 @@ GitHub Actions is configured to run integration tests against a separate Postgre
 
 ## 👨🏽‍💻 Author
 
-_Ndonwi Ashley Cheo_*
+_Ndonwi Ashley Cheo_\*
 
 Software Engineering
 
