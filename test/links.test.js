@@ -96,6 +96,18 @@ async function createLink(options = {}) {
   return { response, payload, code };
 }
 
+async function redirectConcurrently(code, numberOfClicks) {
+  const responses = await Promise.all(
+    Array.from({ length: numberOfClicks }, () =>
+      fetch(`${baseUrl}/${code}`, {
+        redirect: "manual",
+      }),
+    ),
+  );
+
+  assert.ok(responses.every((response) => response.status === 302));
+}
+
 test("malformed JSON returns a clean JSON error response", async () => {
   const response = await fetch(`${baseUrl}/links`, {
     method: "POST",
@@ -338,15 +350,7 @@ test("parallel redirects preserve the click counter", async () => {
   const { code } = await createLink();
   const numberOfClicks = 8;
 
-  const responses = await Promise.all(
-    Array.from({ length: numberOfClicks }, () =>
-      fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-      }),
-    ),
-  );
-
-  assert.ok(responses.every((response) => response.status === 302));
+  await redirectConcurrently(code, numberOfClicks);
 
   const metadataResponse = await fetch(`${baseUrl}/links/${code}`);
   const metadata = await metadataResponse.json();
@@ -463,15 +467,7 @@ test("click pagination retrieves all 60 concurrent clicks without duplicates", a
   const numberOfClicks = 60;
   const pageLimit = 7;
 
-  const responses = await Promise.all(
-    Array.from({ length: numberOfClicks }, () =>
-      fetch(`${baseUrl}/${code}`, {
-        redirect: "manual",
-      }),
-    ),
-  );
-
-  assert.ok(responses.every((response) => response.status === 302));
+  await redirectConcurrently(code, numberOfClicks);
 
   const allClicks = [];
   let cursor = null;

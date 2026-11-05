@@ -1,3 +1,4 @@
+---
 openapi: 3.0.3
 
 info:
@@ -10,6 +11,10 @@ info:
 servers:
   - url: http://localhost:3000
     description: Local development server
+
+#checkov:skip=CKV_OPENAPI_4: Public API intentionally has no authentication.
+#checkov:skip=CKV_OPENAPI_5: Public operations do not require authentication.
+security: []
 
 tags:
   - name: Health
@@ -112,7 +117,8 @@ paths:
         - in: query
           name: after
           required: false
-          description: Base64url-encoded pagination cursor from the previous response
+          description: >
+            Base64url-encoded pagination cursor from the previous response
           schema:
             type: string
         - in: query
@@ -135,6 +141,7 @@ paths:
                 properties:
                   clicks:
                     type: array
+                    maxItems: 100
                     items:
                       $ref: "#/components/schemas/Click"
                   next_cursor:

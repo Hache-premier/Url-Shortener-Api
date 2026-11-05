@@ -59,7 +59,7 @@ The project also focuses on request validation, database transactions, keyset pa
 ### Development Tools
 
 - Git and GitHub
-- VS Code
+- Visual Studio Code
 - npm
 - curl
 
