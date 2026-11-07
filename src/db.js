@@ -3,6 +3,10 @@ import "dotenv/config";
 
 const { Pool } = pg;
 
+const useSsl =
+  process.env.NODE_ENV === "production" ||
+  process.env.DB_SSL === "true";
+
 export const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT),
@@ -10,10 +14,7 @@ export const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   max: Number(process.env.DB_POOL_MAX || 10),
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
 });
 
 pool.on("error", (error) => {
