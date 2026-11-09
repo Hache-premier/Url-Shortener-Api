@@ -4,6 +4,10 @@ import { randomBytes } from "node:crypto";
 
 import { after, before, test } from "node:test";
 
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.test", override: true });
+
 const TEST_DATABASE = "url_shortener_test";
 
 if (process.env.DB_NAME && process.env.DB_NAME !== TEST_DATABASE) {
