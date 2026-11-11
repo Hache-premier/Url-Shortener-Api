@@ -475,9 +475,9 @@ GitHub Actions is configured to run integration tests against a separate Postgre
 
 The API is deployed on Render and accessible publicly.
 
-- **Production API:** https://url-shortener-api-edl9.onrender.com
-- **Swagger UI:** https://url-shortener-api-edl9.onrender.com/docs
-- **Health Check:** https://url-shortener-api-edl9.onrender.com/health
+- **Production API:** <https://url-shortener-api-edl9.onrender.com>
+- **Swagger UI:** <https://url-shortener-api-edl9.onrender.com/docs>
+- **Health Check:** <https://url-shortener-api-edl9.onrender.com/health>
 
 The health endpoint verifies that the API is running and connected to its PostgreSQL database.
 
