@@ -40,7 +40,7 @@ export async function createLinkController(req, res) {
       });
     }
 
-    console.error("Failed to create link:", error.message);
+    console.error("Database operation failed:", error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -81,7 +81,7 @@ export async function getLinkClicksController(req, res) {
       next_cursor: result.next_cursor,
     });
   } catch (error) {
-    console.error("Failed to fetch click log:", error.message);
+    console.error("Failed to fetch click log:", error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -101,7 +101,7 @@ export async function getLinkMetadataController(req, res) {
 
     return res.status(200).json(link);
   } catch (error) {
-    console.error("Failed to fetch link metadata:", error.message);
+    console.error("Failed to fetch link metadata:", error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -130,7 +130,7 @@ export async function redirectLinkController(req, res) {
 
     return res.redirect(302, result.link.target_url);
   } catch (error) {
-    console.error("Failed to redirect link:", error.message);
+    console.error("Failed to redirect link:", error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -230,7 +230,7 @@ export async function exportClicksCsvController(req, res) {
       res.end();
     }
   } catch (error) {
-    console.error("Failed to export click log:", error.message);
+    console.error("Failed to export click log:", error);
 
     if (res.headersSent) {
       res.destroy(error);
@@ -255,7 +255,7 @@ export async function deleteLinkController(req, res) {
 
     return res.status(204).send();
   } catch (error) {
-    console.error("Failed to delete link:", error.message);
+    console.error("Failed to delete link:", error);
 
     return res.status(500).json({
       error: "Internal server error",

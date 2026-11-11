@@ -24,7 +24,7 @@ app.get("/health", async (req, res) => {
       database: "connected",
     });
   } catch (error) {
-    console.error("Health check failed:", error.message);
+    console.error("Health check failed:", error);
 
     return res.status(503).json({
       status: "error",
@@ -62,7 +62,7 @@ app.use((error, req, res, next) => {
     });
   }
 
-  console.error("Unhandled application error:", error.message);
+  console.error("Unhandled application error:", error);
 
   return res.status(500).json({
     error: "Internal server error",
