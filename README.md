@@ -429,7 +429,7 @@ The integration suite covers:
 - SQL injection regression checks.
 - Swagger UI and OpenAPI documentation routes.
 
-The original project test report records **14 passing integration tests**.
+The integration test suite currently contains **18 passing tests**.
 
 **Database safety:** The test suite clears records from `url_shortener_test` before and after its run. Never point the test suite at your development or production database.
 
@@ -471,6 +471,18 @@ GitHub Actions is configured to run integration tests against a separate Postgre
 
 ---
 
+## 🌐 Live Deployment
+
+The API is deployed on Render and accessible publicly.
+
+- **Production API:** https://url-shortener-api-edl9.onrender.com
+- **Swagger UI:** https://url-shortener-api-edl9.onrender.com/docs
+- **Health Check:** https://url-shortener-api-edl9.onrender.com/health
+
+The health endpoint verifies that the API is running and connected to its PostgreSQL database.
+
+---
+
 ## 🚀 Future Improvements
 
 - Add analytics for top referrers and link performance.
@@ -480,7 +492,6 @@ GitHub Actions is configured to run integration tests against a separate Postgre
 - Add QR-code generation for short links.
 - Extend API tests with more failure and edge-case scenarios.
 - Add performance benchmarks for redirects and click-history queries.
-- Deploy the API with a public base URL.
 - Add more detailed monitoring and structured logging.
 
 ---
