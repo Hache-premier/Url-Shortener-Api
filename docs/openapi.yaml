@@ -12,6 +12,9 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 
+  - url: https://url-shortener-api-edl9.onrender.com
+    description: Production server
+
 #checkov:skip=CKV_OPENAPI_4: Public API intentionally has no authentication.
 #checkov:skip=CKV_OPENAPI_5: Public operations do not require authentication.
 security: []
